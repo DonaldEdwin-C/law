@@ -6,7 +6,7 @@
       <h1 class="block text-2xl font-bold text-gray-800">Login</h1>
       <p class="mt-2 text-sm text-gray-600">
         Don't have an account yet?
-        <a class="text-blue-600 decoration-2 hover:underline focus:outline-hidden focus:underline font-medium" href="../examples/html/signup.html">
+        <a class="text-blue-600 decoration-2 hover:underline focus:outline-hidden focus:underline font-medium" href="../auth/register">
           Sign up here
         </a>
       </p>

@@ -25,7 +25,7 @@ export const useAuth = () => {
 
     if (res.token) {
       localStorage.setItem('token', res.token)
-      navigateTo('/home') // after login go to dashboard
+      navigateTo('/home')
     } else {
       throw new Error('Login failed')
     }

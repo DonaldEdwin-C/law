@@ -1,7 +1,7 @@
-const db = require('../db');
-
 exports.getStreaks = async (req, res) => {
   try {
+    const db = req.app.locals.db;
+
     const [rows] = await db.execute(
       "SELECT * FROM achievement_streaks WHERE user_id = ?",
       [req.user.id]
@@ -9,14 +9,16 @@ exports.getStreaks = async (req, res) => {
 
     res.json(rows[0] || { streak_count: 0, last_active: null });
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching streaks:", err);
     res.status(500).send("Error fetching streaks");
   }
 };
 
 exports.updateStreaks = async (req, res) => {
   try {
+    const db = req.app.locals.db;
     const today = new Date().toISOString().slice(0, 10);
+
     const [rows] = await db.execute(
       "SELECT * FROM achievement_streaks WHERE user_id = ?",
       [req.user.id]
@@ -36,8 +38,16 @@ exports.updateStreaks = async (req, res) => {
     const yesterdayStr = yesterday.toISOString().slice(0, 10);
 
     let newCount = 1;
-    if (streak.last_active === yesterdayStr) {
+
+    if (streak.last_active === today) {
+      // Already updated today → keep streak count
+      newCount = streak.streak_count;
+    } else if (streak.last_active === yesterdayStr) {
+      // Continue streak
       newCount = streak.streak_count + 1;
+    } else {
+      // Missed more than one day → reset streak
+      newCount = 1;
     }
 
     await db.execute(
@@ -47,7 +57,7 @@ exports.updateStreaks = async (req, res) => {
 
     res.json({ streak_count: newCount });
   } catch (err) {
-    console.error(err);
+    console.error("Error updating streaks:", err);
     res.status(500).send("Error updating streaks");
   }
 };

@@ -195,6 +195,16 @@
         </nav>
       </div>
       <!-- End Content -->
+       <div class="p-6">
+            <div v-if="user">
+              <button
+                class="mt-6 bg-red-500 text-white px-9 py-2 rounded"
+                @click="logout"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
     </div>
   </div>
   <!-- End Sidebar -->
@@ -210,16 +220,7 @@
           <h2 v-if="user" class="text-lg font-semibold text-gray-800">
             Welcome, {{ user.username }}
           </h2>
-          <div class="p-6">
-            <div v-if="user">
-              <button
-                class="mt-6 bg-red-500 text-white px-4 py-2 rounded"
-                @click="logout"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
+          
 
           <!-- Card Section -->
           <div class="max-w-[100vw] px-4 py-5 sm:px-6 lg:px-8 lg:py-8 mx-auto">
@@ -288,7 +289,7 @@
                   <h3
                     class="text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-800"
                   >
-                    4
+                    {{ streakCount }}
                   </h3>
                 </div>
               </div>
@@ -431,7 +432,7 @@
                           scope="col"
                           class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase"
                         >
-                          Catogory
+                          Category
                         </th>
                         <th
                           scope="col"
@@ -659,7 +660,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { useAuth } from "../composables/useAuth";
 
 const { user, fetchUser, logout } = useAuth();
@@ -709,6 +710,21 @@ async function addPayments() {
 }
 
 const payments = ref([]);
+
+onMounted(async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await $fetch("http://localhost:3001/payments", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    payments.value = res;
+  } catch (err) {
+    error.value = "Failed to load payments";
+    console.error(err);
+  } finally {
+    loading.value = false;
+  }
+});
 // fetch payments on page load
 onMounted(async () => {
   try {
@@ -724,6 +740,23 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+
+
+async function fetchPayments(){
+  try {
+    const token = localStorage.getItem("token");
+    const res = await $fetch("http://localhost:3001/payments", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    payments.value = res;
+  } catch (err) {
+    error.value = "Failed to load payments";
+    console.error(err);
+  } finally {
+    loading.value = false;
+  }
+}
 
 // compute totals
 const totalIncome = computed(() =>
@@ -791,4 +824,35 @@ async function addGoal() {
 
 const totalGoals = computed(() => goals.value.length);
 const balance = computed(() => totalIncome.value - totalExpenses.value);
+//streaks
+const streakCount = ref(0);
+
+
+// Fetch current streak
+const fetchStreak = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:3001/streaks", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await res.json();
+    streakCount.value = data.streak_count || 0;
+  } catch (err) {
+    console.error("Failed to fetch streak:", err);
+  }
+};
+
+// Auto-refresh every 10s
+let intervalId;
+
+onMounted(() => {
+  fetchStreak();
+  intervalId = setInterval(fetchStreak, 10000); // 10 seconds
+});
+
+onUnmounted(() => {
+  clearInterval(intervalId);
+});
 </script>
